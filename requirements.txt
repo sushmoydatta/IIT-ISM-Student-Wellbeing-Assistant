@@ -1,0 +1,43 @@
+# Core ML/AI Libraries
+llama-index>=0.9.0          # Document indexing and retrieval
+transformers>=4.36.0        # Hugging Face transformers
+sentence-transformers>=2.2.2  # Text embeddings
+torch>=2.1.0                # Deep learning support
+numpy>=1.24.0               # Math support
+scikit-learn>=1.3.0         # ML utilities
+
+# LLM API Clients
+groq>=0.4.0                 # Groq API integration
+openai>=1.12.0              # OpenAI API support (optional backup)
+
+# Backend Web Framework
+fastapi>=0.109.0            # API framework
+uvicorn>=0.27.0             # ASGI server
+pydantic>=2.6.0             # Data validation
+
+# Environment Management
+python-dotenv>=1.0.0        # .env support for secrets
+
+# Logging & Monitoring
+sentry-sdk>=1.39.0          # Error tracking
+python-json-logger>=2.0.7   # JSON formatted logging
+
+# Utilities
+requests>=2.31.0            # HTTP client
+pandas>=2.1.0               # Analytics & CSV work
+tenacity>=8.2.0             # Retry logic
+pyyaml>=6.0.1               # YAML support
+
+# Security (optional for auth/JWT)
+python-jose>=3.3.0          # JWT token handling
+passlib>=1.7.4              # Password hashing
+bcrypt>=4.1.0               # Password encryption
+
+# Dev Tools—optional (remove on production if you like)
+pytest>=8.0.0               # Testing framework
+black>=24.1.0               # Code formatting
+mypy>=1.8.0                 # Type checking
+ruff>=0.2.0                 # Fast Python linter
+
+# File upload
+python-multipart>=0.0.6     # File upload support
