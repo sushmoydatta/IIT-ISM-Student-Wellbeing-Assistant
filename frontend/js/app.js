@@ -38,10 +38,6 @@
       sw: "repeating-linear-gradient(0deg, rgba(124,243,232,.08) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(124,243,232,.08) 0 1px, transparent 1px 8px), #020309", orb: "radial-gradient(circle, #ff5fd2 0 20%, #7cf3e8 45%, transparent 70%)", glow: "#ff5fd2" },
     { id: "dusk", name: "Dusk Bloom", desc: "Soap-bubble blobs over a twilight sky. Warm and gentle.",
       sw: "linear-gradient(to bottom, #120c1f, #3a2350 55%, #c0748a)", orb: "conic-gradient(from 40deg, #ffc6a8, #f6a6d8, #b9a8ff, #9fe9e0, #ffc6a8)", glow: "#f6a6d8" },
-    { id: "deep", name: "Bioluminescent Deep", desc: "Glowing plankton and a drifting jellyfish light.",
-      sw: "radial-gradient(ellipse at 50% 0%, #0f5a62, transparent 70%), #010d14", orb: "radial-gradient(circle, #e9fffb, #5ef0d6 40%, transparent 70%)", glow: "#5ef0d6" },
-    { id: "ink", name: "Ink & Paper", desc: "A zen brush circle on washi paper. Light, for daytime.",
-      sw: "radial-gradient(ellipse at 90% 100%, rgba(43,58,140,.25), transparent 60%), #f3f1ec", orb: "radial-gradient(circle, transparent 50%, #1a1d2b 53%, #1a1d2b 66%, transparent 69%)", glow: "transparent" },
   ];
   const vibeRow = $(".vibe-row"), vibeGrid = $(".vibe-grid");
   VIBES.forEach(v => {

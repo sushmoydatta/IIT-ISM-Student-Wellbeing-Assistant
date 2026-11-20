@@ -8,19 +8,14 @@ A crisis-aware wellbeing companion for students at IIT (ISM) Dhanbad. Every mess
 
 ![Liquid Aurora](docs/vibe-aurora.jpg)
 
-### Five vibes, one calm system
+### Three vibes, one calm system
 
-Students choose the space that feels right. Each vibe is a live WebGL scene written as a raw shader, with no libraries. All five breathe on the same 4s-in / 6s-out rhythm as the breathing tool, change colour with the mood you pick, follow your cursor gently, and fade back once a conversation starts so text stays readable. Each vibe restyles the whole interface: type, chips, bubbles, dialogs and glass.
+Students choose the space that feels right. Each vibe is a live WebGL scene written as a raw shader, with no libraries. All three breathe on the same 4s-in / 6s-out rhythm as the breathing tool, change colour with the mood you pick, follow your cursor gently, and fade back once a conversation starts so text stays readable. Each vibe restyles the whole interface: type, chips, bubbles, dialogs and glass.
 
 | Liquid Aurora | Neural Bloom | Dusk Bloom |
 |---|---|---|
 | ![Aurora](docs/vibe-aurora.jpg) | ![Neural](docs/vibe-neural.jpg) | ![Dusk](docs/vibe-dusk.jpg) |
 | Domain-warped aurora, shaded glass orb, liquid-glass panels | ~9k GPU particles in a breathing sphere, sci-fi HUD | Iridescent metaballs over a twilight sky, film grain |
-
-| Bioluminescent Deep | Ink & Paper (light) |
-|---|---|
-| ![Deep](docs/vibe-deep.jpg) | ![Ink](docs/vibe-ink.jpg) |
-| Rising plankton, light shafts, a pulsing jellyfish | Zen ensō brush circle on washi paper, ink wash, hanko seal |
 
 | Conversation | Safety response (mobile) |
 |---|---|
@@ -30,7 +25,7 @@ Students choose the space that feels right. Each vibe is a live WebGL scene writ
 
 - **Crisis triage.** Severity-weighted pattern rules across five categories (suicide, self-harm, immediate danger, distress, abuse/ragging). They run on-device before anything else, so a safety response never depends on the network.
 - **Grounded answers.** The backend chunks campus documents, embeds them with `all-MiniLM-L6-v2`, retrieves the top-k chunks above a similarity threshold, and asks Llama 4 (via Groq) to answer with a safety-aware system prompt.
-- **Living backgrounds.** Five switchable WebGL vibes that breathe, follow the pointer and change colour with mood. They respect `prefers-reduced-motion` and fall back to CSS gradients without WebGL.
+- **Living backgrounds.** Three switchable WebGL vibes that breathe, follow the pointer and change colour with mood. They respect `prefers-reduced-motion` and fall back to CSS gradients without WebGL.
 - **Body-first tools.**
   - Guided 4-in/6-out breathing. The whole scene resyncs to your breath, with optional vibration on Android at each phase change.
   - 5-4-3-2-1 sensory grounding.
@@ -49,7 +44,7 @@ The UI follows the product's goal: reduce the friction of asking for help.
 | Autonomy | Suggested replies and tools are offered, never forced. "Skip, just let me talk" is always there. |
 | Honest about limits | The bot always points to humans and states that it isn't a therapist. "Help now" is always one tap away. |
 | Calm futurism | Soft neon used as light rather than alarm, slow motion (nothing faster than a breath), and full `prefers-reduced-motion` support. |
-| Choice as comfort | Five vibes, including a light daytime theme, so the space fits the person and the moment. The choice is remembered on-device. |
+| Choice as comfort | Three vibes (calm glass, cyber, warm dusk) so the space fits the person and the moment. The choice is remembered on-device. |
 
 ## Architecture
 
@@ -104,7 +99,7 @@ frontend/
   index.html, css/style.css
   js/triage.js     Client-side port of crisis.py
   js/companion.js  On-device replies for demo mode
-  js/scene.js      WebGL engine: 5 vibes, breath clock, mood tint
+  js/scene.js      WebGL engine: 3 vibes, breath clock, mood tint
   js/app.js        UI, chat, vibes, breathing/grounding/reframe tools
 .github/workflows/ Pages deploy + backend tests
 ```

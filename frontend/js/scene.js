@@ -1,4 +1,4 @@
-// Sukoon living background. One WebGL canvas, five "vibes".
+// Sukoon living background. One WebGL canvas, three "vibes".
 // Every vibe breathes on the same 4s-in / 6s-out curve as the breathing tool,
 // tints itself to the mood the student picks, follows the pointer gently,
 // draws its centrepiece over #orb-anchor, and fades that centrepiece back
@@ -88,88 +88,7 @@
         c*=1.-.35*pow(length(uv-.5),1.8);
         c+=(h(gl_FragCoord.xy*.5+fract(t*.7)*77.)-.5)*.07;
         gl_FragColor=vec4(c,1.);
-      }`,
-
-    deep: HEAD + `
-      float plankton(vec2 p,float sc,float sp,float seed){
-        p*=sc; p.y-=t*sp; p.x+=sin(p.y*.35+seed)*.4;
-        vec2 id=floor(p), g=fract(p)-.5;
-        float rnd=h(id+seed);
-        if(rnd<.55) return 0.;
-        vec2 off=(vec2(h(id+seed+1.),h(id+seed+2.))-.5)*.7;
-        float d=length(g-off);
-        float tw=.55+.45*sin(t*(1.+rnd*2.)+rnd*30.);
-        return smoothstep(.09,.0,d)*tw*(rnd-.55)*2.2;
-      }
-      void main(){
-        vec2 uv=gl_FragCoord.xy/r, p=P();
-        vec3 abyss=vec3(.003,.02,.035), shelf=vec3(.02,.13,.17);
-        vec3 c=mix(abyss,shelf,smoothstep(-.1,1.1,uv.y));
-        // light shafts from the surface
-        vec2 src=vec2((m.x-.5)*.3,.9);
-        float ang=atan(p.x-src.x,src.y-p.y);
-        float rays=fbm(vec2(ang*7.,t*.05))*smoothstep(-.6,.6,p.y)*.55;
-        c+=vec3(.25,.75,.8)*rays*rays*.6;
-        // caustic shimmer near the top
-        float ca=fbm(p*5.+vec2(t*.08,-t*.05)+fbm(p*3.-t*.04));
-        c+=tint*pow(ca,4.)*.35*smoothstep(.1,.6,uv.y);
-        float pk=plankton(p,9.,.18,1.)+plankton(p,15.,.11,7.)*.7+plankton(p,24.,.06,3.)*.45;
-        c+=mix(tint,vec3(.4,.7,1.),.35)*pk*(.7+.4*b);
-        // jellyfish-like light: soft core, breathing bell rim
-        float vis=1.-f*.8;
-        vec2 o=p-O()-(m-.5)*vec2(.03,.02);
-        o.y-=sin(t*.6)*.01;
-        float Rr=R*(1.+.12*b);
-        vec2 oe=o*vec2(1.,1.18);
-        float d=length(oe);
-        float wob=fbm(vec2(atan(oe.y,oe.x)*3.,t*.3))*.08*R;
-        float core=exp(-d*d/(Rr*Rr)*2.6);
-        float rim=smoothstep(.018,.0,abs(d-Rr+wob))*smoothstep(-.3*R,.08*R,o.y);
-        float tent=0.;
-        for(int i=0;i<5;i++){float fi=float(i);
-          float x=(fi-2.)*Rr*.32+sin(o.y*14./R*.1+t*1.2+fi)*.02;
-          tent+=smoothstep(.006,.0,abs(o.x-x))*smoothstep(.0,-.05,o.y+Rr*.3)*smoothstep(-Rr*2.4,-Rr*.3,o.y);}
-        c+=(tint*.9+vec3(.2,.3,.6))*(core*.55+rim*.8+tent*.25)*(.6+.5*b)*vis;
-        c+=tint*exp(-d/(Rr*2.5))*.12*vis;
-        c*=1.-.45*pow(length(uv-.5),1.7);
-        c+=(h(gl_FragCoord.xy+fract(t)*31.)-.5)*.025;
-        gl_FragColor=vec4(c,1.);
-      }`,
-
-    ink: HEAD + `
-      void main(){
-        vec2 uv=gl_FragCoord.xy/r, p=P();
-        vec3 paper=vec3(.955,.948,.935);
-        float fib=fbm(p*vec2(60.,8.))*.5+fbm(p*vec2(8.,60.))*.5;
-        vec3 c=paper-fib*.035;
-        vec3 ink=mix(vec3(.10,.12,.22),tint*.35,.3);
-        // ink wash blooming in from the edges
-        float T=t*.02;
-        vec2 w=vec2(fbm(p*1.6+T),fbm(p*1.6-T+5.));
-        float wash=fbm(p*1.2+w*2.+(m-.5)*.2);
-        float edge=smoothstep(.25,.75,length(uv-.5)*1.25);
-        float stain=smoothstep(.45,.8,wash)*edge;
-        c=mix(c,mix(c,ink,.55),stain*.55*(1.-f*.4));
-        c=mix(c,mix(c,tint,.5),smoothstep(.62,.9,wash)*edge*.15);
-        // enso: a breathing zen brush circle
-        float vis=1.-f*.88;
-        vec2 o=p-O()-(m-.5)*vec2(.02,.015);
-        float Rr=R*(1.+.1*b);
-        float d=length(o), a=atan(o.y,o.x);
-        float a0=a+t*.04;
-        float sweep=fract((a0+3.1416)/6.2832);
-        float gap=smoothstep(.0,.06,sweep)*smoothstep(1.,.86,sweep);
-        float thick=R*(.10+.07*sin(a0*1.3+1.)+.05*sweep)*gap;
-        float dry=smoothstep(.3,.7,fbm(vec2(a0*18.,d/R*40.)));
-        float ring=smoothstep(thick,thick*.6,abs(d-Rr+.01*sin(a0*3.)*R))*mix(1.,dry,.55*smoothstep(.5,1.,sweep));
-        c=mix(c,ink,ring*.92*vis);
-        // seal
-        vec2 sl=o-vec2(Rr*.95,-Rr*.95);
-        float seal=step(max(abs(sl.x),abs(sl.y)),R*.07)*(.75+.25*n(sl*400.));
-        c=mix(c,vec3(.78,.26,.23),seal*.85*vis);
-        c*=1.-.08*pow(length(uv-.5),2.);
-        gl_FragColor=vec4(c,1.);
-      }`,
+      }`
   };
 
   const NEURAL_VS = `
@@ -338,7 +257,7 @@
 
   // ---------- public API ----------
   const Scene = {
-    vibes: ["aurora", "neural", "dusk", "deep", "ink"],
+    vibes: ["aurora", "neural", "dusk"],
     setVibe(v) {
       if (!this.vibes.includes(v)) v = "aurora";
       S.vibe = v;
