@@ -28,39 +28,59 @@
   setStatus(!!API_URL, API_URL ? "live · ai" : "on-device");
   $("#mode-note").textContent = API_URL
     ? "You’re in live mode: messages go to the backend API (logged as metadata only)."
-    : "You’re in demo mode: everything runs in your browser and nothing you type leaves this device.";
+    : "You’re in demo mode: everything (including the WebGL scenes) runs in your browser and nothing you type leaves this device.";
 
-  // ---------- starfield ----------
-  (function stars() {
-    const c = $("#stars"), ctx = c.getContext("2d");
-    let pts = [], w, h, dpr;
-    function size() {
-      dpr = Math.min(devicePixelRatio || 1, 2);
-      w = c.width = innerWidth * dpr; h = c.height = innerHeight * dpr;
-      const n = Math.round((innerWidth * innerHeight) / 9000);
-      pts = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.1 + .2, p: Math.random() * Math.PI * 2, s: .2 + Math.random() * .5 }));
-    }
-    function draw(t) {
-      ctx.clearRect(0, 0, w, h);
-      for (const s of pts) {
-        const a = .25 + .35 * Math.sin(s.p + t * .0004 * s.s);
-        ctx.fillStyle = `rgba(200,225,255,${a})`;
-        ctx.beginPath(); ctx.arc(s.x, s.y, s.r * dpr, 0, 7); ctx.fill();
-        if (!reduceMotion) { s.y -= .03 * s.s * dpr; if (s.y < 0) s.y = h; }
-      }
-      if (!reduceMotion) requestAnimationFrame(draw);
-    }
-    size(); addEventListener("resize", size); requestAnimationFrame(draw);
-  })();
+  // ---------- vibes ----------
+  const VIBES = [
+    { id: "aurora", name: "Liquid Aurora", desc: "Northern lights behind frosted glass. Calm and premium.",
+      sw: "radial-gradient(ellipse at 30% 20%, #2a8f8a, transparent 60%), radial-gradient(ellipse at 80% 90%, #5a3fb0, transparent 60%), #070a18", orb: "radial-gradient(circle at 35% 30%, #fff, #7cf3e8 45%, #6a5cff)", glow: "#7cf3e8" },
+    { id: "neural", name: "Neural Bloom", desc: "A particle sphere inside a sci-fi console. Most cyberpunk.",
+      sw: "repeating-linear-gradient(0deg, rgba(124,243,232,.08) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(124,243,232,.08) 0 1px, transparent 1px 8px), #020309", orb: "radial-gradient(circle, #ff5fd2 0 20%, #7cf3e8 45%, transparent 70%)", glow: "#ff5fd2" },
+    { id: "dusk", name: "Dusk Bloom", desc: "Soap-bubble blobs over a twilight sky. Warm and gentle.",
+      sw: "linear-gradient(to bottom, #120c1f, #3a2350 55%, #c0748a)", orb: "conic-gradient(from 40deg, #ffc6a8, #f6a6d8, #b9a8ff, #9fe9e0, #ffc6a8)", glow: "#f6a6d8" },
+    { id: "deep", name: "Bioluminescent Deep", desc: "Glowing plankton and a drifting jellyfish light.",
+      sw: "radial-gradient(ellipse at 50% 0%, #0f5a62, transparent 70%), #010d14", orb: "radial-gradient(circle, #e9fffb, #5ef0d6 40%, transparent 70%)", glow: "#5ef0d6" },
+    { id: "ink", name: "Ink & Paper", desc: "A zen brush circle on washi paper. Light, for daytime.",
+      sw: "radial-gradient(ellipse at 90% 100%, rgba(43,58,140,.25), transparent 60%), #f3f1ec", orb: "radial-gradient(circle, transparent 50%, #1a1d2b 53%, #1a1d2b 66%, transparent 69%)", glow: "transparent" },
+  ];
+  const vibeRow = $(".vibe-row"), vibeGrid = $(".vibe-grid");
+  VIBES.forEach(v => {
+    const sw = document.createElement("button");
+    sw.type = "button"; sw.className = "swatch"; sw.dataset.vibe = v.id;
+    sw.setAttribute("role", "radio"); sw.setAttribute("aria-label", v.name); sw.title = v.name;
+    sw.style.setProperty("--sw", v.orb);
+    sw.addEventListener("click", () => setVibe(v.id));
+    vibeRow.append(sw);
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "vibe-card"; c.dataset.vibe = v.id; c.setAttribute("role", "radio");
+    c.style.setProperty("--sw", v.sw); c.style.setProperty("--orb-sw", v.orb); c.style.setProperty("--glow-sw", v.glow);
+    const pv = document.createElement("div"); pv.className = "pv";
+    const nm = document.createElement("b"); nm.textContent = v.name;
+    const d = document.createElement("span"); d.textContent = v.desc;
+    c.append(pv, nm, d);
+    c.addEventListener("click", () => setVibe(v.id));
+    vibeGrid.append(c);
+  });
+  function setVibe(id) {
+    if (!VIBES.some(v => v.id === id)) id = "aurora";
+    document.documentElement.dataset.vibe = id;
+    store.set("sukoon.vibe", id);
+    $$(".swatch, .vibe-card").forEach(el => el.setAttribute("aria-checked", el.dataset.vibe === id));
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#05070f";
+    if (window.Scene) Scene.setVibe(id);
+  }
+  setVibe(document.documentElement.dataset.vibe || "aurora");
 
-  // ---------- welcome orb cue (4s in, 6s out; matches CSS) ----------
+  // ---------- breath cue (driven by the scene's clock) ----------
+  let breathRunning = false;
   const cue = $("#orb-cue");
-  let cueTimer;
-  (function cueLoop(inhale = true) {
-    if (reduceMotion) { cue.textContent = "in for 4 · out for 6"; return; }
-    cue.textContent = inhale ? "breathe in" : "breathe out";
-    cueTimer = setTimeout(() => cueLoop(!inhale), inhale ? 4000 : 6000);
-  })();
+  if (reduceMotion) cue.textContent = "in for 4 · out for 6";
+  addEventListener("sukoon:phase", e => {
+    if (!reduceMotion) cue.textContent = e.detail === "in" ? "breathe in" : "breathe out";
+    if (breathRunning) buzz(e.detail === "in" ? 30 : [15, 60, 15]);
+  });
+  function buzz(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch { /* unsupported */ } }
 
   // ---------- chat ----------
   const welcome = $("#welcome"), chat = $("#chat"), messages = $("#messages");
@@ -71,7 +91,7 @@
   function startChat(mood) {
     if (started) return;
     started = true;
-    clearTimeout(cueTimer);
+    if (window.Scene) { Scene.setMood(mood); Scene.setFocus(1); }
     welcome.hidden = true; chat.hidden = false;
     document.body.classList.add("chatting");
     const o = Companion.opener(mood);
@@ -103,7 +123,16 @@
     const bubble = document.createElement("div");
     bubble.className = "bubble";
     if (role === "bot") {
-      text.split(/\n{2,}/).forEach(p => { const el = document.createElement("p"); el.textContent = p; bubble.append(el); });
+      let wi = 0;
+      text.split(/\n{2,}/).forEach(p => {
+        const el = document.createElement("p");
+        p.split(/(\s+)/).forEach(part => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { el.append(part); return; }
+          const w = document.createElement("span"); w.className = "w"; w.style.setProperty("--i", Math.min(wi++, 90)); w.textContent = part; el.append(w);
+        });
+        bubble.append(el);
+      });
     } else bubble.textContent = text;
     if (opts.crisis) bubble.append(crisisCard());
     if (opts.actions?.length) {
@@ -244,7 +273,7 @@
     minutes = +b.dataset.min;
   }));
   function stopBreath(finished) {
-    running = false; bTimers.forEach(clearTimeout); bTimers = [];
+    running = false; breathRunning = false; bTimers.forEach(clearTimeout); bTimers = [];
     breather.classList.remove("in", "out");
     phase.textContent = finished ? "well done" : "ready"; count.textContent = "";
     toggle.textContent = "Begin";
@@ -274,7 +303,8 @@
   }
   toggle.addEventListener("click", () => {
     if (running) return stopBreath(false);
-    running = true; breaths = 0; done.hidden = true; toggle.textContent = "Stop";
+    running = true; breathRunning = true; breaths = 0; done.hidden = true; toggle.textContent = "Stop";
+    if (window.Scene) Scene.syncBreath();
     cycle(Date.now() + minutes * 60000);
   });
   $("#dlg-breathe").addEventListener("close", () => running && stopBreath(false));

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-vibe="aurora">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -11,15 +11,18 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23b8fff6'/%3E%3Cstop offset='.6' stop-color='%237cf3e8'/%3E%3Cstop offset='1' stop-color='%23a58bff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='26' fill='url(%23g)'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Chakra+Petch:wght@400;500;600&family=Fraunces:ital,opsz,wght@1,9..144,300;1,9..144,400&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    // Apply the saved vibe before first paint to avoid a flash of the default theme.
+    try { var v = JSON.parse(localStorage.getItem("sukoon.vibe")); if (v) document.documentElement.dataset.vibe = v; } catch (e) {}
+  </script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="bg" aria-hidden="true">
-    <div class="bg-grid"></div>
-    <div class="bg-aurora a1"></div>
-    <div class="bg-aurora a2"></div>
-    <canvas id="stars"></canvas>
+    <div class="bg-fallback"></div>
+    <canvas id="scene"></canvas>
+    <div class="hud" ><i></i><i></i><i></i><i></i></div>
   </div>
 
   <header class="topbar">
@@ -34,6 +37,7 @@
       <button class="tool" data-open="breathe"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9" opacity=".45"/></svg><span>Breathe</span></button>
       <button class="tool" data-open="ground"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M7 14h10M10 10h4M12 4v2"/></svg><span>Ground</span></button>
       <button class="tool" data-open="reframe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg><span>Reframe</span></button>
+      <button class="tool" data-open="vibe" aria-label="Change vibe"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5S14 15 15.5 15H18a3 3 0 0 0 3-3"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span>Vibe</span></button>
       <button class="tool" data-open="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>About</span></button>
       <button class="tool urgent" data-open="help"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg><span>Help now</span></button>
     </nav>
@@ -41,7 +45,7 @@
 
   <!-- ============ WELCOME ============ -->
   <section class="welcome" id="welcome">
-    <div class="orb-wrap" aria-hidden="true">
+    <div class="orb-wrap" id="orb-anchor" aria-hidden="true">
       <div class="orb-ring r3"></div>
       <div class="orb-ring r2"></div>
       <div class="orb-ring r1"></div>
@@ -64,6 +68,7 @@
       </div>
     </fieldset>
     <button class="link-btn" id="skip-checkin">skip, just let me talk →</button>
+    <div class="vibe-row" role="radiogroup" aria-label="Choose a vibe"></div>
   </section>
 
   <!-- ============ CHAT ============ -->
@@ -151,6 +156,14 @@
     <p class="muted small">Not sure what to say? “I’m not okay and I need to talk to someone” is enough.</p>
   </dialog>
 
+  <dialog class="sheet wide" id="dlg-vibe" aria-labelledby="vibe-title">
+    <button class="close" data-close aria-label="Close">×</button>
+    <p class="eyebrow mono">// choose your vibe</p>
+    <h2 id="vibe-title">Pick the space that feels right today</h2>
+    <p class="muted">Each one breathes with you and shifts colour with your mood. Your choice stays in this browser.</p>
+    <div class="vibe-grid" role="radiogroup" aria-label="Vibes"></div>
+  </dialog>
+
   <dialog class="sheet wide" id="dlg-about" aria-labelledby="about-title">
     <button class="close" data-close aria-label="Close">×</button>
     <p class="eyebrow mono">// about this project</p>
@@ -169,7 +182,7 @@
       <li><b>Body before words.</b> Paced breathing and grounding work even when talking feels hard.</li>
       <li><b>Honest about limits.</b> It’s a companion, not a clinician, and it always points to humans.</li>
     </ul>
-    <p class="muted small">Stack: FastAPI · sentence-transformers · Groq · vanilla JS. <span id="mode-note"></span> <a href="https://github.com/sushmoydatta/IIT-ISM-Student-Wellbeing-Assistant" target="_blank" rel="noopener">Source on GitHub ↗</a></p>
+    <p class="muted small">Stack: FastAPI · sentence-transformers · Groq · vanilla JS · raw WebGL shaders (5 vibes, no libraries). <span id="mode-note"></span> <a href="https://github.com/sushmoydatta/IIT-ISM-Student-Wellbeing-Assistant" target="_blank" rel="noopener">Source on GitHub ↗</a></p>
   </dialog>
 
   <footer class="foot mono">built with care by <a href="https://github.com/sushmoydatta" target="_blank" rel="noopener">sushmoy datta</a> · not a substitute for professional care</footer>
@@ -177,6 +190,7 @@
   <script src="js/config.js"></script>
   <script src="js/triage.js"></script>
   <script src="js/companion.js"></script>
+  <script src="js/scene.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
