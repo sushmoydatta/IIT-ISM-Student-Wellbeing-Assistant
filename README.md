@@ -1,91 +1,112 @@
-# IIT ISM Student Wellbeing Assistant
+# Sukoon · IIT ISM Student Wellbeing Assistant
 
-A prototype support chatbot that combines document-grounded Q&A with a rule-based crisis triage layer, built as a FastAPI backend with a lightweight JS frontend.
+**[▶ Live demo](https://sushmoydatta.github.io/IIT-ISM-Student-Wellbeing-Assistant/)** · runs entirely in your browser, nothing you type leaves your device.
 
-The goal: when a student asks a general wellbeing question, answer it using retrieved campus resources. When a message shows signs of acute distress, skip the generic answer and surface a safety response instead.
+A crisis-aware wellbeing companion for students at IIT (ISM) Dhanbad. Every message goes through a safety triage layer first. Risky messages skip the AI entirely and get a person-first response with real helplines. Everything else gets a calm, grounded reply drawn from campus wellbeing resources.
+
+*Sukoon* (सुकून) means peace of mind.
+
+![Welcome screen](docs/welcome.png)
+
+| Conversation | Safety response (mobile) |
+|---|---|
+| ![Chat](docs/chat.png) | ![Safety](docs/mobile-safety.png) |
+
+## What's in it
+
+- **Crisis triage.** Severity-weighted pattern rules across five categories (suicide, self-harm, immediate danger, distress, abuse/ragging). They run on-device before anything else, so a safety response never depends on the network.
+- **Grounded answers.** The backend chunks campus documents, embeds them with `all-MiniLM-L6-v2`, retrieves the top-k chunks above a similarity threshold, and asks Llama 4 (via Groq) to answer with a safety-aware system prompt.
+- **Body-first tools.**
+  - Guided 4-in/6-out breathing, synced to a breathing orb.
+  - 5-4-3-2-1 sensory grounding.
+  - A CBT-style thought-reframe journal, stored only in the browser.
+- **Privacy by default.** Logs record metadata only. Message text is redacted unless explicitly enabled, and session IDs are hashed.
+
+## Design philosophy
+
+The UI follows the product's goal: reduce the friction of asking for help.
+
+| Principle | How it shows up |
+|---|---|
+| Low barrier | No sign-up. A mood check-in replaces the intimidating blank text box. |
+| Regulate before reasoning | The landing orb breathes at a calming 4s-in/6s-out pace before you type anything. |
+| Validate, then help | Replies reflect the feeling first, normalise it, then offer one small step (person-centred counselling). |
+| Autonomy | Suggested replies and tools are offered, never forced. "Skip, just let me talk" is always there. |
+| Honest about limits | The bot always points to humans and states that it isn't a therapist. "Help now" is always one tap away. |
+| Calm futurism | Dark, soft neon used as light rather than alarm, slow motion, and full `prefers-reduced-motion` support. |
 
 ## Architecture
 
 ```
-User message (frontend)
-        │
-        ▼
-   FastAPI /chat endpoint
-        │
-        ▼
-  Crisis triage layer (crisis.py)
-        │
-   ┌────┴─────┐
-   │           │
- Crisis     Not flagged
-   │           │
-   ▼           ▼
-Safety      RAG document search
-response    (sentence-transformers + cosine similarity)
-   │           │
-   └─────┬─────┘
-         ▼
-   Response + chat log (logger.py)
+Browser (frontend/)                         FastAPI (backend/)
+───────────────────                         ──────────────────
+message ─► on-device triage ─┬─ crisis ─► safety card + helplines
+                             │
+                             └─ ok ─► demo: curated companion replies
+                                      live: POST /chat ─► triage again
+                                                         ─► MiniLM top-k retrieval
+                                                         ─► Llama 4 (Groq)
+                                                         ─► privacy-first log
 ```
 
-- **Crisis triage** (`crisis.py`) — scans incoming messages for keyword patterns across categories (suicide risk, self-harm, immediate danger, emotional distress, abuse), each with a severity level. Flagged messages get a safety-focused response instead of going through document search.
-- **Document search** (`doc_engine.py`) — embeds campus wellbeing resources with `sentence-transformers`, retrieves the closest match by cosine similarity, and asks an LLM (via Groq) to answer the user's question grounded in that document.
-- **Logging** (`logger.py`) — every conversation, crisis flag, and error is logged to local CSV/JSON for basic analytics (volume, crisis frequency, category breakdown).
-- **Frontend** (`frontend/`) — a plain HTML/CSS/JS chat widget that talks to the FastAPI backend.
+The frontend runs in **demo mode** by default, which is how it's hosted on GitHub Pages. Point it at a running backend to switch to **live mode**: set `API_URL` in `frontend/js/config.js`, or open the page with `?api=https://your-backend/chat`. If the backend is unreachable, the page falls back to on-device replies.
 
-## Setup
+## Run locally
 
 ```bash
 cd backend
 pip install -r requirements.txt
-cp .env.example .env
-# add your GROQ_API_KEY to .env
-
+cp .env.example .env   # add your GROQ_API_KEY
 uvicorn main:app --reload
 ```
 
-Open `frontend/index.html` in a browser (update `API_URL` in `chatbot.js` if your backend isn't on `localhost:8000`).
+```bash
+cd frontend
+python -m http.server 5500
+```
 
-Place any campus wellbeing documents (FAQs, counseling info, resource guides) as text files in `backend/data/` — this is what the RAG layer searches over.
+Then open `http://localhost:5500/?api=http://127.0.0.1:8000/chat`.
 
-## Honest limitations
+Tests:
 
-This is a prototype built for learning, not a deployed or clinically validated system. Worth knowing before treating it as anything more:
-
-- **Crisis detection is keyword-based, not semantic.** It matches literal phrases (e.g. `"want to die"`, `"cutting"`). It will miss indirect language, misspellings, and anything phrased differently from the listed patterns — this is a real gap, not a minor one, given what's at stake if it misses something.
-- **Safety responses are generic**, not localized to specific helplines or connected to real campus counseling escalation.
-- **Conversations are logged in plaintext** to local CSV files with no encryption or access control — not appropriate for handling real sensitive disclosures as-is.
-- **No human-in-the-loop escalation.** A real deployment would need a path to alert an actual counselor, not just return a text response.
-
-None of this makes the architecture pattern (triage → route to safety response or RAG → log) a bad one to have built and learned from — it's a reasonable structure. It just isn't production-ready, and I'd rather say that here than have someone find out the hard way.
+```bash
+cd backend && pip install -r requirements-dev.txt && pytest -q
+```
 
 ## Project structure
 
 ```
-IIT-ISM-Student-Wellbeing-Assistant/
-├── backend/
-│   ├── main.py           # FastAPI app, /chat endpoint
-│   ├── crisis.py          # Keyword-based crisis detection + safety responses
-│   ├── doc_engine.py       # RAG: embeddings, similarity search, LLM query
-│   ├── logger.py           # Chat/error logging + basic analytics
-│   ├── models.py            # Pydantic request/response schemas
-│   ├── .env.example
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html
-│   ├── chatbot.js
-│   └── style.css
-├── .gitignore
-├── LICENSE
-└── README.md
+backend/
+  main.py          FastAPI app: /chat, health check, CORS
+  crisis.py        Pattern-based triage + safety responses
+  doc_engine.py    Chunking, embeddings, retrieval, Groq call
+  logger.py        Redacted CSV logs + daily analytics
+  models.py        Pydantic schemas
+  data/            Campus wellbeing documents (RAG corpus)
+  tests/           pytest suite for triage and API
+frontend/
+  index.html, css/style.css
+  js/triage.js     Client-side port of crisis.py
+  js/companion.js  On-device replies for demo mode
+  js/app.js        UI, chat, breathing/grounding/reframe tools
+.github/workflows/ Pages deploy + backend tests
 ```
+
+## Honest limitations
+
+This is a learning prototype, not a deployed or clinically validated system.
+
+- **Crisis detection is still pattern-based.** Whole-word matching and common variants reduce false positives (e.g. "cutting-edge"), but indirect language like "I won't be a problem much longer" can be missed. A real deployment needs a trained classifier and human review.
+- **Demo mode replies are curated, not generated.** They're written to be safe and supportive, but they don't understand context the way the live LLM pipeline does.
+- **No human escalation.** A production system would need a path to alert an on-call counsellor.
+- **Campus details.** Helplines are national services (Tele-MANAS, iCall, 112, anti-ragging). For IIT ISM counselling the bot points to the institute website instead of hard-coding contacts that could go stale.
 
 ## What I'd do next
 
-- Replace keyword matching with a fine-tuned or few-shot classifier for crisis detection
-- Add real, localized helpline info and a human escalation path
-- Encrypt logs at rest and add a retention/deletion policy
-- Expand the document set and evaluate retrieval quality properly (not just top-1 cosine match)
+- Replace pattern triage with a fine-tuned classifier, evaluated on recall for high-risk messages
+- Evaluate retrieval quality properly (labelled queries, recall@k)
+- Add an opt-in counsellor hand-off flow
+- Add Hindi and Bengali support
 
 ## License
 

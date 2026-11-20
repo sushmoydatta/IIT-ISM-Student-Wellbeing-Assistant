@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sukoon · Student Wellbeing Companion</title>
+  <meta name="description" content="A calm, private space for IIT (ISM) Dhanbad students to talk, breathe and find support. Crisis-aware chatbot with guided breathing, grounding and thought reframing." />
+  <meta name="theme-color" content="#070b14" />
+  <meta property="og:title" content="Sukoon · Student Wellbeing Companion" />
+  <meta property="og:description" content="Talk, breathe, ground yourself. A crisis-aware wellbeing companion for students." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23b8fff6'/%3E%3Cstop offset='.6' stop-color='%237cf3e8'/%3E%3Cstop offset='1' stop-color='%23a58bff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='26' fill='url(%23g)'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-aurora a1"></div>
+    <div class="bg-aurora a2"></div>
+    <canvas id="stars"></canvas>
+  </div>
+
+  <header class="topbar">
+    <button class="brand" id="brand" aria-label="Sukoon home">
+      <span class="brand-dot"></span>
+      <span class="brand-name">sukoon<span class="caret">_</span></span>
+    </button>
+    <span class="status" id="status" title="Where your messages are processed">
+      <span class="status-led"></span><span id="status-text">on-device</span>
+    </span>
+    <nav class="tools" aria-label="Wellbeing tools">
+      <button class="tool" data-open="breathe"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9" opacity=".45"/></svg><span>Breathe</span></button>
+      <button class="tool" data-open="ground"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M7 14h10M10 10h4M12 4v2"/></svg><span>Ground</span></button>
+      <button class="tool" data-open="reframe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg><span>Reframe</span></button>
+      <button class="tool" data-open="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>About</span></button>
+      <button class="tool urgent" data-open="help"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg><span>Help now</span></button>
+    </nav>
+  </header>
+
+  <!-- ============ WELCOME ============ -->
+  <section class="welcome" id="welcome">
+    <div class="orb-wrap" aria-hidden="true">
+      <div class="orb-ring r3"></div>
+      <div class="orb-ring r2"></div>
+      <div class="orb-ring r1"></div>
+      <div class="orb"></div>
+    </div>
+    <p class="orb-cue mono" id="orb-cue" aria-hidden="true">breathe in</p>
+
+    <h1 class="welcome-title">Hey. You don’t need the right words here.</h1>
+    <p class="welcome-sub">A quiet space to think out loud, slow down, or find help. No sign-up. No judgement.</p>
+
+    <fieldset class="checkin">
+      <legend class="mono">// how’s your mind right now?</legend>
+      <div class="moods">
+        <button class="mood" data-mood="calm"><i style="--c:#7cf3e8"></i>Okay, actually</button>
+        <button class="mood" data-mood="anxious"><i style="--c:#ffd27c"></i>Anxious</button>
+        <button class="mood" data-mood="low"><i style="--c:#8aa8ff"></i>Low</button>
+        <button class="mood" data-mood="overwhelmed"><i style="--c:#ff9bb8"></i>Overwhelmed</button>
+        <button class="mood" data-mood="numb"><i style="--c:#9aa3b5"></i>Numb</button>
+        <button class="mood" data-mood="curious"><i style="--c:#b49cff"></i>Just exploring</button>
+      </div>
+    </fieldset>
+    <button class="link-btn" id="skip-checkin">skip, just let me talk →</button>
+  </section>
+
+  <!-- ============ CHAT ============ -->
+  <main class="chat" id="chat" hidden>
+    <div class="messages" id="messages" role="log" aria-live="polite" aria-label="Conversation"></div>
+
+    <div class="composer-wrap">
+      <div class="suggestions" id="suggestions"></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <label for="input" class="sr-only">Your message</label>
+        <textarea id="input" rows="1" maxlength="2000" placeholder="Type whatever’s on your mind…"></textarea>
+        <button type="submit" class="send" id="send" aria-label="Send" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+      <p class="disclaimer">Sukoon is a student project, not a therapist. In an emergency call <a href="tel:112">112</a> or Tele-MANAS <a href="tel:14416">14416</a>.</p>
+    </div>
+  </main>
+
+  <!-- ============ DIALOGS ============ -->
+  <dialog class="sheet" id="dlg-breathe" aria-labelledby="breathe-title">
+    <button class="close" data-close aria-label="Close">×</button>
+    <p class="eyebrow mono">// paced breathing</p>
+    <h2 id="breathe-title">Slow your breath, slow your mind</h2>
+    <p class="muted">A longer exhale tells your nervous system it’s safe. Follow the circle: in for 4, out for 6.</p>
+    <div class="breather" id="breather">
+      <div class="breather-orb"></div>
+      <div class="breather-text"><span id="breath-phase">ready</span><span class="mono" id="breath-count"></span></div>
+    </div>
+    <div class="row center">
+      <div class="seg" role="radiogroup" aria-label="Duration">
+        <button role="radio" aria-checked="false" data-min="1">1 min</button>
+        <button role="radio" aria-checked="true" data-min="2">2 min</button>
+        <button role="radio" aria-checked="false" data-min="5">5 min</button>
+      </div>
+      <button class="btn primary" id="breath-toggle">Begin</button>
+    </div>
+    <p class="muted small center" id="breath-done" hidden></p>
+  </dialog>
+
+  <dialog class="sheet" id="dlg-ground" aria-labelledby="ground-title">
+    <button class="close" data-close aria-label="Close">×</button>
+    <p class="eyebrow mono">// 5·4·3·2·1 grounding</p>
+    <h2 id="ground-title">Come back to the room you’re in</h2>
+    <p class="muted">When thoughts spiral, your senses are an anchor. Take your time with each one.</p>
+    <div class="ground-steps" id="ground-steps"></div>
+    <div class="ground-card" id="ground-card"></div>
+    <div class="row between">
+      <button class="btn ghost" id="ground-back">Back</button>
+      <button class="btn primary" id="ground-next">Next</button>
+    </div>
+  </dialog>
+
+  <dialog class="sheet" id="dlg-reframe" aria-labelledby="reframe-title">
+    <button class="close" data-close aria-label="Close">×</button>
+    <p class="eyebrow mono">// thought reframe · CBT-inspired</p>
+    <h2 id="reframe-title">Talk to yourself like a friend would</h2>
+    <form id="reframe-form" class="reframe">
+      <label>1. What’s the thought that’s weighing on you?
+        <textarea name="thought" rows="2" placeholder="e.g. I’m going to fail endsems and disappoint everyone." required></textarea></label>
+      <label>2. If a close friend said this, what would you tell them?
+        <textarea name="friend" rows="2" placeholder="e.g. One exam doesn’t define you. You’ve recovered before." required></textarea></label>
+      <label>3. A kinder, more balanced way to see it:
+        <textarea name="reframe" rows="2" placeholder="e.g. I’m worried because I care. I can prepare one topic today." required></textarea></label>
+      <div class="row between">
+        <span class="muted small">Saved only in this browser.</span>
+        <button class="btn primary" type="submit">Save reframe</button>
+      </div>
+    </form>
+    <div class="reframes" id="reframes"></div>
+  </dialog>
+
+  <dialog class="sheet urgent-sheet" id="dlg-help" aria-labelledby="help-title">
+    <button class="close" data-close aria-label="Close">×</button>
+    <p class="eyebrow mono">// you matter</p>
+    <h2 id="help-title">Talk to a real person, right now</h2>
+    <p class="muted">If you’re thinking about hurting yourself or feel unsafe, please reach out. These are free and confidential.</p>
+    <div class="helplines">
+      <a class="helpline" href="tel:14416"><b>Tele-MANAS</b><span>Govt. of India mental health line · 24×7 · many languages</span><em>14416</em></a>
+      <a class="helpline" href="tel:112"><b>Emergency</b><span>Police · ambulance · immediate danger</span><em>112</em></a>
+      <a class="helpline" href="tel:+919152987821"><b>iCall (TISS)</b><span>Trained counsellors · Mon–Sat, 10am–8pm</span><em>9152987821</em></a>
+      <a class="helpline" href="tel:18001805522"><b>Anti-Ragging Helpline</b><span>National · 24×7</span><em>1800-180-5522</em></a>
+      <a class="helpline" href="https://www.iitism.ac.in/" target="_blank" rel="noopener"><b>IIT (ISM) Counselling Centre</b><span>Free for students · see the institute site for current timings</span><em>iitism.ac.in ↗</em></a>
+    </div>
+    <p class="muted small">Not sure what to say? “I’m not okay and I need to talk to someone” is enough.</p>
+  </dialog>
+
+  <dialog class="sheet wide" id="dlg-about" aria-labelledby="about-title">
+    <button class="close" data-close aria-label="Close">×</button>
+    <p class="eyebrow mono">// about this project</p>
+    <h2 id="about-title">How Sukoon works</h2>
+    <p class="muted">Every message passes through a safety layer <em>before</em> anything else. If it signals risk, the AI is skipped entirely and a person-first safety response is shown with real helplines.</p>
+    <ol class="pipeline">
+      <li><span class="mono">01</span><b>Message</b><small>typed in the browser</small></li>
+      <li><span class="mono">02</span><b>Crisis triage</b><small>severity-weighted pattern rules, runs on-device first</small></li>
+      <li class="fork"><div><span class="mono">03a</span><b>Safety response</b><small>helplines, no AI</small></div><div><span class="mono">03b</span><b>Grounded answer</b><small>MiniLM retrieval → Llama 4 via Groq <i>(live)</i> · curated responses <i>(demo)</i></small></div></li>
+      <li><span class="mono">04</span><b>Privacy-first log</b><small>metadata only, session IDs hashed</small></li>
+    </ol>
+    <h3>Design principles</h3>
+    <ul class="principles">
+      <li><b>Low barrier.</b> No account, no form. A mood check-in replaces a blank page.</li>
+      <li><b>Validate, then help.</b> Replies reflect feelings before offering advice, as in person-centred counselling.</li>
+      <li><b>Body before words.</b> Paced breathing and grounding work even when talking feels hard.</li>
+      <li><b>Honest about limits.</b> It’s a companion, not a clinician, and it always points to humans.</li>
+    </ul>
+    <p class="muted small">Stack: FastAPI · sentence-transformers · Groq · vanilla JS. <span id="mode-note"></span> <a href="https://github.com/sushmoydatta/IIT-ISM-Student-Wellbeing-Assistant" target="_blank" rel="noopener">Source on GitHub ↗</a></p>
+  </dialog>
+
+  <footer class="foot mono">built with care by <a href="https://github.com/sushmoydatta" target="_blank" rel="noopener">sushmoy datta</a> · not a substitute for professional care</footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/triage.js"></script>
+  <script src="js/companion.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
