@@ -81,10 +81,11 @@ await check("follow-up stays on topic", async () => {
   assert(t.includes("25 minutes") || t.includes("smaller"), `got: ${t.slice(0, 80)}`);
 });
 await check("draft is kept if Enter is pressed while Sukoon is replying", async () => {
+  const n = await botCount(page);
   await page.fill("#input", "I feel lonely"); await page.keyboard.press("Enter");
   await page.fill("#input", "second message"); await page.keyboard.press("Enter");
   assert(await page.inputValue("#input") === "second message", "draft lost");
-  await waitBot(page, await botCount(page));
+  await waitBot(page, n + 1);
   await page.fill("#input", "");
 });
 await check("action chip opens the matching tool", async () => {
@@ -171,8 +172,9 @@ await check("no console errors during the whole session", async () => assert(pag
 await page.context().close();
 
 // ---------------------------------------------------------------- live API mode
+const API = u => new URL(u).pathname === "/fake-api/chat"; // match the endpoint, not the page URL that mentions it
 page = await fresh();
-await page.route("**/fake-api/chat", route => route.fulfill({ status: 200, contentType: "application/json",
+await page.route(API, route => route.fulfill({ status: 200, contentType: "application/json",
   body: JSON.stringify({ response: "Live answer from the API.", is_crisis: false, sources: ["exam_stress.md"] }) }));
 await page.goto(BASE + "?api=http://localhost:5511/fake-api/chat");
 await check("live mode: status pill shows live", async () => assert((await page.textContent("#status-text")).includes("live"), "not live"));
@@ -184,15 +186,15 @@ await check("live mode: answer and sources come from the API", async () => {
   assert((await last.textContent()).includes("exam_stress.md"), "no sources");
 });
 await check("live mode: falls back on-device if the API fails", async () => {
-  await page.unroute("**/fake-api/chat");
-  await page.route("**/fake-api/chat", route => route.abort());
+  await page.unroute(API);
+  await page.route(API, route => route.abort());
   await say(page, "I can't sleep");
   assert((await page.locator(".msg.bot").last().textContent()).includes("unreachable"), "no fallback note");
 });
 await check("live mode: crisis never waits for the network", async () => {
   let called = false;
-  await page.unroute("**/fake-api/chat");
-  await page.route("**/fake-api/chat", route => { called = true; route.abort(); });
+  await page.unroute(API);
+  await page.route(API, route => { called = true; route.abort(); });
   await say(page, "I want to kill myself");
   assert(!called, "API was called for a crisis message");
 });
