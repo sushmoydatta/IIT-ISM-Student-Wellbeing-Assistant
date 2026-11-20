@@ -84,6 +84,16 @@ Tests:
 cd backend && pip install -r requirements-dev.txt && pytest -q
 ```
 
+The backend suite covers crisis triage, the API, and a parity check that the browser and server triage agree. The end-to-end suite clicks through every feature in a real browser: chat, safety escalation, all tools, vibes, live-API mode and fallbacks, reduced motion, no-WebGL, blocked storage and small phones.
+
+```bash
+python -m http.server 5511 -d frontend
+```
+
+```bash
+node frontend/tests/e2e.mjs
+```
+
 ## Project structure
 
 ```

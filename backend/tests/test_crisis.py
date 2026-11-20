@@ -17,6 +17,10 @@ from crisis import SeverityLevel, analyze_crisis, generate_safety_response  # no
     "seniors are ragging me every night",
     "this is goodbye",
     "I don't want to be alive",
+    "I feel like nobody would notice if I was gone",
+    "I won't be around much longer",
+    "everyone would be better off without me",
+    "ab jeena nahi chahta",
 ])
 def test_flags_crisis(text):
     assert analyze_crisis(text).is_crisis

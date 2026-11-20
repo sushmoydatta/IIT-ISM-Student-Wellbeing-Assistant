@@ -14,6 +14,9 @@
       ["better off dead|better off without me", S.SEVERE],
       ["no reason to live|don'?t want to (?:live|be alive|exist)", S.SEVERE],
       ["wish i (?:was|were) dead|wish i wasn'?t (?:here|alive)", S.SEVERE],
+      ["(?:nobody|no one|no-one) would (?:notice|care|miss me) if i(?:'?m| was| were) gone|if i (?:was|were) gone|when i'?m gone", S.SEVERE],
+      ["won'?t be (?:around|here|a problem) (?:much )?(?:longer|for long)|(?:everyone|they)(?:'?d| would) be (?:better|happier) without me", S.SEVERE],
+      ["jeena nahi (?:chahta|chahti)|mar jana (?:chahta|chahti)|marna (?:chahta|chahti)", S.SEVERE],
     ]},
     { name: "self_harm", priority: 2, patterns: [
       ["cut(?:ting)? myself|cutting my (?:arms?|wrists?|legs?)", S.HIGH],

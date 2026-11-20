@@ -228,11 +228,11 @@
         t.remove();
         setStatus(false, "on-device · fallback");
         const r = Companion.respond(text);
-        await botSay(r.text, { actions: r.actions, delay: 200, meta: "live server unreachable; answered on-device" });
+        await botSay(r.text, { actions: r.actions, crisis: r.escalate, delay: 200, meta: "live server unreachable; answered on-device" });
       }
     } else {
       const r = Companion.respond(text);
-      await botSay(r.text, { actions: r.actions });
+      await botSay(r.text, { actions: r.actions, crisis: r.escalate });
     }
     busy = false; updateSend();
   }
@@ -245,7 +245,8 @@
   });
   form.addEventListener("submit", e => {
     e.preventDefault();
-    const v = input.value; input.value = ""; autosize(); sendMessage(v);
+    if (busy || !input.value.trim()) return; // keep the draft while Sukoon is replying
+    const v = input.value; input.value = ""; autosize(); updateSend(); sendMessage(v);
   });
 
   // ---------- dialogs ----------
